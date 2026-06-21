@@ -38,6 +38,11 @@ export const api = {
     const data = await request('/alerts/');
     return data.alerts || [];
   },
+  getCostSummary: () => request('/costs/summary'),
+  getCostByService: async () => {
+    const data = await request('/costs/by-service');
+    return data.services || [];
+  },
 };
 
 export { ApiError };
