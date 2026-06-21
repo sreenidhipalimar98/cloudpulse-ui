@@ -5,6 +5,7 @@ import { Infrastructure } from './pages/Infrastructure';
 import { Pipelines } from './pages/Pipelines';
 import { Alerts } from './pages/Alerts';
 import { Costs } from './pages/Costs';
+import { Diagnostics } from './pages/Diagnostics';
 import './styles/tokens.css';
 
 export default function App() {
@@ -25,6 +26,7 @@ export default function App() {
             <Route path="/pipelines" element={<Pipelines />} />
             <Route path="/alerts" element={<Alerts />} />
             <Route path="/costs" element={<Costs />} />
+            <Route path="/diagnostics" element={<Diagnostics />} />
           </Routes>
         </main>
       </div>
