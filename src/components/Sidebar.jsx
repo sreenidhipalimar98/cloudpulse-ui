@@ -4,6 +4,7 @@ import { Pulse } from './Pulse';
 const NAV_ITEMS = [
   { to: '/', label: 'Overview', icon: '◆' },
   { to: '/infrastructure', label: 'Infrastructure', icon: '▣' },
+  { to: '/diagnostics', label: 'Diagnostics', icon: '⚡' },
   { to: '/pipelines', label: 'Pipelines', icon: '▶' },
   { to: '/alerts', label: 'Alerts', icon: '▲' },
   { to: '/costs', label: 'Costs', icon: '◎' },
