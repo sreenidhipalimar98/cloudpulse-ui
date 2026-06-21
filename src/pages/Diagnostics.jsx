@@ -5,6 +5,12 @@ import { Panel } from '../components/Panel';
 import { StatusBadge } from '../components/StatusBadge';
 import { LoadingState, ErrorState, EmptyState } from '../components/States';
 
+const LOG_LEVEL_COLORS = {
+  error: 'var(--status-critical)',
+  warning: 'var(--status-degraded)',
+  info: 'var(--text-secondary)',
+};
+
 export function Diagnostics() {
   const ecs = usePolling(api.getEcsServices, 30000);
   const rds = usePolling(api.getRdsInstances, 30000);
@@ -46,7 +52,7 @@ export function Diagnostics() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
       <div>
         <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)' }}>Diagnostics</h1>
-        <p style={{ margin: 'var(--space-1) 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>Click a service to view recent events, stopped task reasons, and error logs</p>
+        <p style={{ margin: 'var(--space-1) 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>Click a service to view application logs, stopped task reasons, and root cause data</p>
       </div>
 
       {/* Service selector */}
@@ -83,13 +89,14 @@ export function Diagnostics() {
 
       {selectedService && ecsDiag && !loading && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-          <Panel title={`ECS Diagnostics: ${selectedService}`} meta={`${ecsDiag.running_count || 0}/${ecsDiag.desired_count || 0} tasks`}>
+          <Panel title={`Diagnostics: ${selectedService}`} meta={`${ecsDiag.running_count || 0}/${ecsDiag.desired_count || 0} tasks`}>
             {ecsDiag.error ? <ErrorState message={ecsDiag.error} /> : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
+
                 {/* Stopped Tasks */}
                 {ecsDiag.stopped_tasks?.length > 0 && (
                   <div>
-                    <h3 style={{ margin: '0 0 var(--space-3)', fontSize: '13px', fontWeight: 600, color: 'var(--status-critical)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Stopped Tasks</h3>
+                    <h3 style={{ margin: '0 0 var(--space-3)', fontSize: '13px', fontWeight: 600, color: 'var(--status-critical)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>⚠ Stopped Tasks (Root Cause)</h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                       {ecsDiag.stopped_tasks.map((task, i) => (
                         <div key={i} style={{ padding: 'var(--space-3)', background: 'var(--status-critical-bg)', borderLeft: '3px solid var(--status-critical)', borderRadius: 'var(--radius-sm)' }}>
@@ -102,11 +109,42 @@ export function Diagnostics() {
                   </div>
                 )}
 
-                {/* Recent Events */}
+                {/* Application Logs (the real logs) */}
+                {ecsDiag.recent_logs?.length > 0 && (
+                  <div>
+                    <h3 style={{ margin: '0 0 var(--space-3)', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Application Logs (last hour)</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 0, maxHeight: 500, overflowY: 'auto', background: 'var(--bg-base)', padding: 'var(--space-3)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+                      {ecsDiag.recent_logs.map((log, i) => (
+                        <div key={i} style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', lineHeight: 1.8, color: LOG_LEVEL_COLORS[log.level] || 'var(--text-secondary)', borderBottom: '1px solid var(--border-subtle)', padding: '2px 0' }}>
+                          <span style={{ color: 'var(--text-tertiary)', marginRight: 8 }}>{log.timestamp.split('T')[1]?.slice(0, 8)}</span>
+                          <span style={{ color: log.level === 'error' ? 'var(--status-critical)' : log.level === 'warning' ? 'var(--status-degraded)' : 'var(--accent)', marginRight: 8, fontWeight: 600 }}>[{log.level.toUpperCase()}]</span>
+                          {log.message}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Error Logs (filtered) */}
+                {ecsDiag.recent_errors?.length > 0 && (
+                  <div>
+                    <h3 style={{ margin: '0 0 var(--space-3)', fontSize: '13px', fontWeight: 600, color: 'var(--status-critical)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Errors & Exceptions Only</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 0, maxHeight: 300, overflowY: 'auto', background: 'var(--bg-base)', padding: 'var(--space-3)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(229, 72, 77, 0.3)' }}>
+                      {ecsDiag.recent_errors.map((log, i) => (
+                        <div key={i} style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', lineHeight: 1.8, color: 'var(--status-critical)', padding: '2px 0' }}>
+                          <span style={{ color: 'var(--text-tertiary)', marginRight: 8 }}>{log.timestamp.split('T')[1]?.slice(0, 8)}</span>
+                          {log.message}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Service Events */}
                 {ecsDiag.events?.length > 0 && (
                   <div>
                     <h3 style={{ margin: '0 0 var(--space-3)', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Service Events</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', maxHeight: 300, overflowY: 'auto' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', maxHeight: 250, overflowY: 'auto' }}>
                       {ecsDiag.events.map((event, i) => (
                         <div key={i} style={{ padding: 'var(--space-2) var(--space-3)', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-sm)', fontSize: '12px' }}>
                           <span style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', marginRight: 8 }}>{event.timestamp.split('T')[1]?.slice(0, 8)}</span>
@@ -117,22 +155,7 @@ export function Diagnostics() {
                   </div>
                 )}
 
-                {/* Error Logs */}
-                {ecsDiag.recent_errors?.length > 0 && (
-                  <div>
-                    <h3 style={{ margin: '0 0 var(--space-3)', fontSize: '13px', fontWeight: 600, color: 'var(--status-degraded)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Error Logs (last hour)</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', maxHeight: 400, overflowY: 'auto', background: 'var(--bg-base)', padding: 'var(--space-3)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
-                      {ecsDiag.recent_errors.map((log, i) => (
-                        <div key={i} style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', lineHeight: 1.6, color: log.message.includes('ERROR') || log.message.includes('Traceback') ? 'var(--status-critical)' : 'var(--text-secondary)' }}>
-                          <span style={{ color: 'var(--text-tertiary)' }}>{log.timestamp.split('T')[1]?.slice(0, 8)} </span>
-                          {log.message}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {!ecsDiag.stopped_tasks?.length && !ecsDiag.recent_errors?.length && (
+                {!ecsDiag.stopped_tasks?.length && !ecsDiag.recent_errors?.length && !ecsDiag.recent_logs?.length && (
                   <EmptyState message="No issues detected. Service is running normally." />
                 )}
               </div>
@@ -145,7 +168,6 @@ export function Diagnostics() {
         <Panel title={`RDS Diagnostics: ${selectedRds}`}>
           {rdsDiag.error ? <ErrorState message={rdsDiag.error} /> : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-              {/* Metrics */}
               {rdsDiag.metrics && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-3)' }}>
                   <div style={{ padding: 'var(--space-3)', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
@@ -162,8 +184,6 @@ export function Diagnostics() {
                   </div>
                 </div>
               )}
-
-              {/* Events */}
               {rdsDiag.events?.length > 0 ? (
                 <div>
                   <h3 style={{ margin: '0 0 var(--space-3)', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Recent Events (24h)</h3>
