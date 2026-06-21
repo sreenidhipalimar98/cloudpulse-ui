@@ -45,6 +45,10 @@ export const api = {
   },
   getDiagnosticsEcs: (serviceName) => request(`/diagnostics/ecs/${serviceName}`),
   getDiagnosticsRds: (instanceId) => request(`/diagnostics/rds/${instanceId}`),
+  getRecentCommits: async () => {
+    const data = await request('/github/commits');
+    return data.commits || [];
+  },
 };
 
 export { ApiError };
