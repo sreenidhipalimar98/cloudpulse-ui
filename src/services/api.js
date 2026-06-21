@@ -43,6 +43,8 @@ export const api = {
     const data = await request('/costs/by-service');
     return data.services || [];
   },
+  getDiagnosticsEcs: (serviceName) => request(`/diagnostics/ecs/${serviceName}`),
+  getDiagnosticsRds: (instanceId) => request(`/diagnostics/rds/${instanceId}`),
 };
 
 export { ApiError };
