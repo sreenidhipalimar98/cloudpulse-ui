@@ -18,11 +18,26 @@ async function request(path) {
 
 export const api = {
   getHealth: () => request('/health'),
-  getEc2Instances: () => request('/infrastructure/ec2'),
-  getEcsServices: () => request('/infrastructure/ecs'),
-  getRdsInstances: () => request('/infrastructure/rds'),
-  getPipelines: () => request('/pipelines/'),
-  getAlerts: () => request('/alerts/'),
+  getEc2Instances: async () => {
+    const data = await request('/infrastructure/ec2');
+    return data.instances || [];
+  },
+  getEcsServices: async () => {
+    const data = await request('/infrastructure/ecs');
+    return data.services || [];
+  },
+  getRdsInstances: async () => {
+    const data = await request('/infrastructure/rds');
+    return data.instances || [];
+  },
+  getPipelines: async () => {
+    const data = await request('/pipelines/');
+    return data.pipelines || [];
+  },
+  getAlerts: async () => {
+    const data = await request('/alerts/');
+    return data.alerts || [];
+  },
 };
 
 export { ApiError };
