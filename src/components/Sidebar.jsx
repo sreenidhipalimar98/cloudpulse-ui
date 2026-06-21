@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { to: '/infrastructure', label: 'Infrastructure', icon: '▣' },
   { to: '/pipelines', label: 'Pipelines', icon: '▶' },
   { to: '/alerts', label: 'Alerts', icon: '▲' },
+  { to: '/costs', label: 'Costs', icon: '◎' },
 ];
 
 export function Sidebar({ overallStatus = 'healthy' }) {
